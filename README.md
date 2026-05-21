@@ -1,4 +1,4 @@
-# AI SaaS Dashboard
+# AI Dashboard
 
 A modern AI-powered dashboard inspired by tools like ChatGPT, Notion, and Linear.
 
@@ -55,7 +55,7 @@ This project is part of a frontend portfolio targeting freelance work (Upwork) a
 
 ## 🌐 Live Demo
 
-
+https://ai-dashboard-virid-delta.vercel.app/dashboard
 
 ---
 
