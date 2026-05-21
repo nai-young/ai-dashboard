@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useUIStore } from "@/store/useUIStore";
+import { useUIStore, View } from "@/store/useUIStore";
 import { useAIStore } from "@/store/useAIStore";
 import { tools } from "@/lib/tools";
 import { iconMap } from "@/lib/icons";
 import { ThemeToggle } from "./ThemeToggle";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function Sidebar() {
   const { view, setView } = useUIStore();
   const { setTool, tool: activeTool } = useAIStore();
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(false);
 
   const grouped = tools.reduce(
     (acc, t) => {
@@ -24,15 +25,15 @@ export default function Sidebar() {
   );
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "history", label: "History" },
-    { id: "settings", label: "Settings" },
+    { id: View.dashboard, label: "Dashboard" },
+    { id: View.history, label: "History" },
+    { id: View.settings, label: "Settings" },
   ];
 
   return (
     <div
       className={`h-screen border-r bg-background p-3 flex flex-col transition-all ${
-        collapsed ? "w-[72px]" : "w-[260px]"
+        collapsed ? "w-18" : "w-65"
       }`}
     >
       {/* HEADER */}
@@ -44,14 +45,16 @@ export default function Sidebar() {
           size="sm"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? "→" : "←"}
+          {collapsed ? <ArrowRight /> : <ArrowLeft />}
         </Button>
       </div>
 
       {/* GLOBAL NAV */}
       <div className="space-y-1 mb-4">
         {navItems.map((item) => {
-          const Icon = iconMap[item.id];
+          const Icon = iconMap[item.id] as React.ComponentType<{
+            className: string;
+          }>;
           const active = view === item.id;
 
           return (
@@ -91,14 +94,16 @@ export default function Sidebar() {
 
             <div className="flex flex-col gap-1">
               {items.map((t) => {
-                const Icon = iconMap[t.id];
+                const Icon = iconMap[t.id] as React.ComponentType<{
+                  className: string;
+                }>;
                 const active = activeTool === t.id;
 
                 return (
                   <div key={t.id} className="relative group">
                     {/* ACTIVE BAR (Linear style) */}
                     {active && (
-                      <div className="absolute left-0 top-0 h-full w-[3px] bg-primary rounded" />
+                      <div className="absolute left-0 top-0 h-full w-0.75 bg-primary rounded" />
                     )}
 
                     <Button
@@ -106,7 +111,7 @@ export default function Sidebar() {
                       className="w-full justify-start gap-2"
                       onClick={() => {
                         setTool(t.id);
-                        setView("dashboard");
+                        setView(View.dashboard);
                       }}
                     >
                       <Icon className="w-4 h-4" />

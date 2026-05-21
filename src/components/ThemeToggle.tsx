@@ -22,7 +22,6 @@ export function ThemeToggle() {
         )}
       </Button>
 
-      {/* ICONO ABAJO (INDICADOR VISUAL) */}
       <div className="text-[10px] text-muted-foreground">
         {theme === "dark" ? "Dark" : "Light"}
       </div>

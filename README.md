@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI SaaS Dashboard
 
-## Getting Started
+A modern AI-powered dashboard inspired by tools like ChatGPT, Notion, and Linear.
 
-First, run the development server:
+Built as a frontend portfolio project for showcasing production-level UI/UX and scalable architecture.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- ChatGPT-like conversation history system
+- Modular AI tools system (email, rewrite, ideas, summary)
+- Session-based memory (Zustand state management)
+- Clean sidebar navigation (collapsible UI)
+- Settings panel with theme control
+- Download & reset conversation history
+- Modern responsive UI (Next.js + Tailwind)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🧠 Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js (App Router)
+- TypeScript
+- Zustand (state management)
+- Tailwind CSS
+- shadcn/ui
+- Lucide icons
+- next-themes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📸 UI Inspiration
 
-## Deploy on Vercel
+Inspired by:
+- ChatGPT by OpenAI
+- Notion
+- Linear
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📦 Status
+
+🚧 AI integration (Claude API) coming soon  
+🚧 Streaming responses planned  
+🚧 Supabase persistence planned  
+
+---
+
+## 💼 Purpose
+
+This project is part of a frontend portfolio targeting freelance work (Upwork) and SaaS product development.
+
+---
+
+## 🌐 Live Demo
+
+
+
+---
+
+## 👨‍💻 Author
+
+Frontend Developer specializing in React, Next.js, and AI-powered UI systems.

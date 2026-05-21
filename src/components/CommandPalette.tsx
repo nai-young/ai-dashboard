@@ -6,7 +6,7 @@ export default function CommandPalette() {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
-      <div className="bg-background w-[500px] rounded-lg p-3">
+      <div className="bg-background w-125 rounded-lg p-3">
         {tools.map((tool) => (
           <button
             key={tool.id}

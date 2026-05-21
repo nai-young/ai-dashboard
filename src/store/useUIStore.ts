@@ -1,6 +1,10 @@
 import { create } from "zustand";
 
-type View = "dashboard" | "history" | "settings";
+export enum View {
+  dashboard = "dashboard",
+  settings = "settings",
+  history = "history",
+}
 
 type UIState = {
   view: View;
@@ -8,6 +12,6 @@ type UIState = {
 };
 
 export const useUIStore = create<UIState>((set) => ({
-  view: "dashboard",
+  view: View.dashboard,
   setView: (v) => set({ view: v }),
 }));

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useAIStore } from "@/store/useAIStore";
+import { MessageRole, useAIStore } from "@/store/useAIStore";
 
 const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
   email: [
@@ -57,7 +57,6 @@ const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
 };
 
 async function fakeClaudeAPI(prompt: string) {
-  // 👉 aquí luego metes Claude real API
   return new Promise<string>((resolve) => {
     setTimeout(() => {
       resolve("🤖 AI Response: " + prompt);
@@ -76,25 +75,21 @@ export default function ToolPanel() {
 
     let sessionId = activeSessionId;
 
-    // 🧠 CREATE SESSION IF NONE EXISTS
     if (!sessionId) {
       sessionId = createSession(tool, input);
     }
 
-    // 🧠 ADD USER MESSAGE
     addMessage(sessionId, {
-      role: "user",
+      role: MessageRole.user,
       content: input,
     });
 
     setLoading(true);
 
-    // 🤖 CALL AI (replace later with Claude API)
     const response = await fakeClaudeAPI(input);
 
-    // 🧠 ADD ASSISTANT MESSAGE
     addMessage(sessionId, {
-      role: "assistant",
+      role: MessageRole.assistant,
       content: response,
     });
 

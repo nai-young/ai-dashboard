@@ -10,7 +10,6 @@ export default function Settings() {
 
   const { sessions, clearHistory } = useAIStore();
 
-  // DOWNLOAD REAL HISTORY (sessions)
   const downloadHistory = () => {
     const data = JSON.stringify(sessions, null, 2);
 
@@ -29,7 +28,6 @@ export default function Settings() {
     <div className="p-6 w-full space-y-6">
       <h1 className="text-xl font-bold">Settings</h1>
 
-      {/* 🌙 APPEARANCE */}
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold">Appearance</h2>
 
@@ -50,7 +48,6 @@ export default function Settings() {
         </div>
       </Card>
 
-      {/* 🤖 AI INFORMATION */}
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold">AI Information</h2>
 
@@ -65,7 +62,6 @@ export default function Settings() {
         </div>
       </Card>
 
-      {/* 📦 DATA */}
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold">Data</h2>
 

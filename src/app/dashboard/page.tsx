@@ -6,25 +6,24 @@ import OutputPanel from "@/components/OutputPanel";
 import { useUIStore } from "@/store/useUIStore";
 import Settings from "@/components/Settings";
 import History from "@/components/History";
-import { useAIStore } from "@/store/useAIStore";
-import ChatView from "@/components/ChatView";
+import { Mounted } from "@/components/Mounted";
 
 export default function Dashboard() {
   const { view } = useUIStore();
-  const { activeSessionId } = useAIStore();
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <Sidebar />
-      {view === "dashboard" && (
-        <>
-          {activeSessionId ? <ChatView /> : null}
-          <ToolPanel />
-          <OutputPanel />
-        </>
-      )}
-      {view === "history" && <History />}
-      {view === "settings" && <Settings />}{" "}
-    </div>
+    <Mounted>
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar />
+        {view === "dashboard" && (
+          <>
+            <ToolPanel />
+            <OutputPanel />
+          </>
+        )}
+        {view === "history" && <History />}
+        {view === "settings" && <Settings />}
+      </div>
+    </Mounted>
   );
 }
