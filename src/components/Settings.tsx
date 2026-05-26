@@ -51,14 +51,18 @@ export default function Settings() {
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold">AI Information</h2>
 
-        <div className="text-sm text-muted-foreground">Provider: Anthropic</div>
+        <div className="text-sm text-muted-foreground">Provider: OpenRouter (free tier)</div>
 
         <div className="text-sm text-muted-foreground">
-          Model: Claude 3 Haiku
+          Models: Mistral 7B, Zephyr 7B, OpenChat 7B
         </div>
 
         <div className="text-sm text-muted-foreground">
-          Mode: Streaming enabled
+          Mode: Request-based with retry fallback
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Rate limit: 3 requests / 2 minutes per IP
         </div>
       </Card>
 

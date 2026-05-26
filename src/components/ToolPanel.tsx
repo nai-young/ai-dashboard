@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { MessageRole, useAIStore } from "@/store/useAIStore";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
   email: [
@@ -56,12 +57,30 @@ const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
   ],
 };
 
-async function fakeClaudeAPI(prompt: string) {
-  return new Promise<string>((resolve) => {
-    setTimeout(() => {
-      resolve("🤖 AI Response: " + prompt);
-    }, 1200);
-  });
+async function callAI(prompt: string, tool: string): Promise<{ content: string; error?: string }> {
+  try {
+    const res = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, tool }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return {
+        content: "",
+        error: data.message || data.error || `Error ${res.status}: AI service unavailable`,
+      };
+    }
+
+    return { content: data.content || "No response received." };
+  } catch (err: any) {
+    return {
+      content: "",
+      error: "Network error. Please check your connection and try again.",
+    };
+  }
 }
 
 export default function ToolPanel() {
@@ -69,29 +88,41 @@ export default function ToolPanel() {
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const runAI = async () => {
     if (!input.trim()) return;
 
+    setError(null);
     let sessionId = activeSessionId;
 
     if (!sessionId) {
+      // createSession already adds the user's first message
       sessionId = createSession(tool, input);
+    } else {
+      // Only add user message manually when reusing an existing session
+      addMessage(sessionId, {
+        role: MessageRole.user,
+        content: input,
+      });
     }
-
-    addMessage(sessionId, {
-      role: MessageRole.user,
-      content: input,
-    });
 
     setLoading(true);
 
-    const response = await fakeClaudeAPI(input);
+    const response = await callAI(input, tool);
 
-    addMessage(sessionId, {
-      role: MessageRole.assistant,
-      content: response,
-    });
+    if (response.error) {
+      setError(response.error);
+      addMessage(sessionId, {
+        role: MessageRole.assistant,
+        content: `⚠️ **Error:** ${response.error}\n\nPlease try again in a moment.`,
+      });
+    } else {
+      addMessage(sessionId, {
+        role: MessageRole.assistant,
+        content: response.content,
+      });
+    }
 
     setLoading(false);
     setInput("");
@@ -102,9 +133,8 @@ export default function ToolPanel() {
       {/* HEADER */}
       <div>
         <h2 className="text-lg font-semibold capitalize">{tool} assistant</h2>
-
         <p className="text-sm text-muted-foreground">
-          Select a suggestion or write your own prompt
+          Powered by free AI models via OpenRouter
         </p>
       </div>
 
@@ -114,12 +144,23 @@ export default function ToolPanel() {
           <button
             key={ex.label}
             onClick={() => setInput(ex.prompt)}
-            className="text-xs px-3 py-1 rounded-full border bg-background hover:bg-muted transition"
+            className="text-xs px-3 py-1.5 rounded-full border bg-background hover:bg-muted transition"
           >
             {ex.label}
           </button>
         ))}
       </div>
+
+      {/* ERROR */}
+      {error && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">AI Service Error</p>
+            <p className="text-red-300/70 text-xs mt-0.5">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* INPUT */}
       <Textarea
@@ -127,12 +168,24 @@ export default function ToolPanel() {
         onChange={(e) => setInput(e.target.value)}
         placeholder="Type your request..."
         className="min-h-[160px]"
+        disabled={loading}
       />
 
       {/* ACTION */}
-      <Button onClick={runAI} disabled={loading} className="w-full">
-        {loading ? "Generating..." : "Generate"}
+      <Button onClick={runAI} disabled={loading || !input.trim()} className="w-full">
+        {loading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            Generating...
+          </>
+        ) : (
+          "Generate"
+        )}
       </Button>
+
+      <p className="text-[10px] text-muted-foreground text-center">
+        Rate limit: 3 requests / 2 minutes · Free models via OpenRouter
+      </p>
     </div>
   );
 }
