@@ -105,7 +105,7 @@ function SidebarNav({
       <div className="border-t my-2" />
 
       {/* AI TOOLS */}
-      <div className="space-y-4 mt-2 overflow-y-auto overflow-x-hidden">
+      <div className="space-y-4 mt-2 overflow-hidden">
         {Object.entries(grouped).map(([category, items]) => (
           <div key={category}>
             {!collapsed && (
