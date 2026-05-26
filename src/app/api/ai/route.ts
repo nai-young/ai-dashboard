@@ -1,49 +1,62 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
-// Rate limiter: max 3 requests per 2 minutes per IP (conservative for free tier)
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+// Rate limiter: max 3 requests per 2 minutes per IP
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_MAX = 3;
 const RATE_LIMIT_WINDOW_MS = 2 * 60 * 1000;
+
+const MODEL = process.env.OPENROUTER_MODEL || "openrouter/free";
 
 function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
   if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
+    rateLimitMap.set(ip, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW_MS,
+    });
+
+    return {
+      allowed: true,
+      remaining: RATE_LIMIT_MAX - 1,
+    };
   }
 
   if (record.count >= RATE_LIMIT_MAX) {
-    return { allowed: false, remaining: 0 };
+    return {
+      allowed: false,
+      remaining: 0,
+    };
   }
 
-  record.count++;
-  return { allowed: true, remaining: RATE_LIMIT_MAX - record.count };
+  record.count += 1;
+
+  return {
+    allowed: true,
+    remaining: RATE_LIMIT_MAX - record.count,
+  };
 }
 
 function getClientIP(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
+
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+
   return "unknown";
 }
 
-// Free models available on OpenRouter
-const FREE_MODELS = [
-  "deepseek/deepseek-chat-v3-0324:free",
-  "meta-llama/llama-3.3-8b-instruct:free",
-  "google/gemma-3-4b-it:free",
-];
-
-// Sleep helper for delays between retries
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export async function POST(request: Request) {
   try {
-    // Rate limiting
     const ip = getClientIP(request);
     const rateCheck = checkRateLimit(ip);
 
@@ -73,7 +86,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // If no API key configured, return informative error
     if (!OPENROUTER_API_KEY) {
       return NextResponse.json(
         {
@@ -86,10 +98,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // System prompt based on tool
     const systemPrompts: Record<string, string> = {
       email:
-        "You are a professional email writing assistant. Write concise, polite, and effective emails. Use professional tone.",
+        "You are a professional email writing assistant. Write concise, polite, and effective emails. Use a professional tone.",
       summary:
         "You are a summarization expert. Create clear, structured summaries with bullet points. Be concise but comprehensive.",
       rewrite:
@@ -101,89 +112,113 @@ export async function POST(request: Request) {
     const systemPrompt =
       systemPrompts[tool] || "You are a helpful AI assistant.";
 
-    // Try each free model in order with delays between retries
-    let lastError = null;
-    for (let i = 0; i < FREE_MODELS.length; i++) {
-      const model = FREE_MODELS[i];
-      try {
-        // Wait 1.5s between model attempts to avoid hammering the API
-        if (i > 0) {
-          await sleep(1500);
-        }
+    let lastErrorMessage = "Unknown error";
 
+    for (let attempt = 0; attempt < RATE_LIMIT_MAX; attempt++) {
+      try {
         const res = await fetch(OPENROUTER_URL, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            "HTTP-Referer": "https://ai-dashboard-virid-delta.vercel.app",
+            "Content-Type": "application/json",
+            "HTTP-Referer": APP_URL,
             "X-Title": "AI Dashboard",
           },
           body: JSON.stringify({
-            model,
+            model: MODEL,
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: prompt },
             ],
-            max_tokens: 800,
-            temperature: 0.7,
+            max_tokens: 300,
+            temperature: 0.3,
           }),
         });
 
+        const rawText = await res.text();
+
         if (!res.ok) {
-          let errorData: any = {};
+          let parsedError: any = null;
+
           try {
-            errorData = await res.json();
+            parsedError = JSON.parse(rawText);
           } catch {
-            errorData = { error: { message: `HTTP ${res.status}` } };
+            parsedError = null;
           }
 
-          const errorMsg = errorData.error?.message || `HTTP ${res.status}`;
-          lastError = new Error(errorMsg);
+          lastErrorMessage =
+            parsedError?.error?.message ||
+            parsedError?.message ||
+            rawText ||
+            `HTTP ${res.status}`;
 
-          // If rate limited (429) or server error (5xx), try next model
+          console.error("OpenRouter model failed:", {
+            model: MODEL,
+            status: res.status,
+            error: lastErrorMessage,
+          });
+
           if (res.status === 429 || res.status >= 500) {
             continue;
           }
 
-          // For other errors, don't retry
           break;
         }
 
-        const data = await res.json();
-        const content =
-          data.choices?.[0]?.message?.content || "No response from AI.";
+        let data: any;
+
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          throw new Error("Invalid JSON response from OpenRouter");
+        }
+
+        const content = data.choices?.[0]?.message?.content;
+
+        if (!content) {
+          lastErrorMessage = "No content returned from AI model";
+          continue;
+        }
 
         return NextResponse.json(
-          { content, model },
+          {
+            content,
+            model: MODEL,
+          },
           {
             headers: {
               "X-RateLimit-Remaining": String(rateCheck.remaining),
             },
           },
         );
-      } catch (err: any) {
-        lastError = err;
+      } catch (error: unknown) {
+        lastErrorMessage =
+          error instanceof Error ? error.message : "Unknown model error";
+
+        console.error("OpenRouter request failed:", {
+          model: MODEL,
+          error: lastErrorMessage,
+        });
+
         continue;
       }
     }
 
-    // All models failed — give a helpful message
     const isRateLimited =
-      lastError?.message?.includes("429") ||
-      lastError?.message?.includes("rate limit");
+      lastErrorMessage.toLowerCase().includes("429") ||
+      lastErrorMessage.toLowerCase().includes("rate limit");
+
     const isTimeout =
-      lastError?.message?.includes("timeout") ||
-      lastError?.message?.includes("fetch failed");
+      lastErrorMessage.toLowerCase().includes("timeout") ||
+      lastErrorMessage.toLowerCase().includes("fetch failed");
 
     if (isRateLimited) {
       return NextResponse.json(
         {
           error: "All free AI models are currently busy",
           message:
-            "Free models on OpenRouter are experiencing high demand. Please wait 2-3 minutes and try again.",
-          details:
-            "The free model tier has rate limits shared across all users.",
+            "Free models on OpenRouter are experiencing high demand. Please wait a few minutes and try again.",
+          details: lastErrorMessage,
         },
         { status: 503 },
       );
@@ -195,7 +230,7 @@ export async function POST(request: Request) {
           error: "AI service timeout",
           message:
             "The AI service took too long to respond. Free models can be slow. Please try again.",
-          details: lastError?.message || "Connection timeout",
+          details: lastErrorMessage,
         },
         { status: 504 },
       );
@@ -205,14 +240,17 @@ export async function POST(request: Request) {
       {
         error: "All free AI models are currently unavailable",
         message:
-          "The free AI models are down or busy. Please try again in a few minutes.",
-        details: lastError?.message || "Unknown error",
+          "The free AI models are down, busy, or no longer available. Please try again later.",
+        details: lastErrorMessage,
       },
       { status: 503 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: "Failed to process request", details: error.message },
+      {
+        error: "Failed to process request",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 },
     );
   }
