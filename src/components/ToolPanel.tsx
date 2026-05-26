@@ -1,10 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState, useRef, type KeyboardEvent } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { MessageRole, useAIStore } from "@/store/useAIStore";
 import { AlertCircle, Loader2 } from "lucide-react";
+
+const toolMeta: Record<
+  string,
+  { label: string; gradient: string; icon: string }
+> = {
+  email: {
+    label: "Email Assistant",
+    gradient: "from-blue-500 to-indigo-500",
+    icon: "✉️",
+  },
+  summary: {
+    label: "Text Summarizer",
+    gradient: "from-emerald-500 to-teal-500",
+    icon: "📝",
+  },
+  rewrite: {
+    label: "Content Rewriter",
+    gradient: "from-violet-500 to-purple-500",
+    icon: "✨",
+  },
+  ideas: {
+    label: "Idea Generator",
+    gradient: "from-amber-500 to-orange-500",
+    icon: "💡",
+  },
+};
 
 const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
   email: [
@@ -19,7 +45,6 @@ const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
         "Improve the tone of this email to sound more confident and clear.",
     },
   ],
-
   summary: [
     {
       label: "Summarize article",
@@ -30,7 +55,6 @@ const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
       prompt: "Summarize this CV into a short professional profile:",
     },
   ],
-
   rewrite: [
     {
       label: "Improve clarity",
@@ -42,7 +66,6 @@ const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
       prompt: "Rewrite this text to make it more impactful and professional.",
     },
   ],
-
   ideas: [
     {
       label: "Portfolio ideas",
@@ -57,7 +80,10 @@ const examplesByTool: Record<string, { label: string; prompt: string }[]> = {
   ],
 };
 
-async function callAI(prompt: string, tool: string): Promise<{ content: string; error?: string }> {
+async function callAI(
+  prompt: string,
+  tool: string,
+): Promise<{ content: string; error?: string }> {
   try {
     const res = await fetch("/api/ai", {
       method: "POST",
@@ -70,12 +96,15 @@ async function callAI(prompt: string, tool: string): Promise<{ content: string; 
     if (!res.ok) {
       return {
         content: "",
-        error: data.message || data.error || `Error ${res.status}: AI service unavailable`,
+        error:
+          data.message ||
+          data.error ||
+          `Error ${res.status}: AI service unavailable`,
       };
     }
 
     return { content: data.content || "No response received." };
-  } catch (err: any) {
+  } catch {
     return {
       content: "",
       error: "Network error. Please check your connection and try again.",
@@ -83,23 +112,35 @@ async function callAI(prompt: string, tool: string): Promise<{ content: string; 
   }
 }
 
-export default function ToolPanel() {
-  const { tool, activeSessionId, createSession, addMessage, isLoading, setLoading } = useAIStore();
+export default function ToolPanel(): React.JSX.Element {
+  const {
+    tool,
+    activeSessionId,
+    createSession,
+    addMessage,
+    isLoading,
+    setLoading,
+  } = useAIStore();
 
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const runAI = async () => {
-    if (!input.trim()) return;
+  const runAI = useCallback(async (): Promise<void> => {
+    if (!input.trim()) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      textareaRef.current?.focus();
+      return;
+    }
 
     setError(null);
     let sessionId = activeSessionId;
 
     if (!sessionId) {
-      // createSession already adds the user's first message
       sessionId = createSession(tool, input);
     } else {
-      // Only add user message manually when reusing an existing session
       addMessage(sessionId, {
         role: MessageRole.user,
         content: input,
@@ -125,16 +166,39 @@ export default function ToolPanel() {
 
     setLoading(false);
     setInput("");
+  }, [input, activeSessionId, tool, createSession, addMessage, setLoading]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>): void => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        void runAI();
+      }
+    },
+    [runAI],
+  );
+
+  const meta = toolMeta[tool] || {
+    label: tool,
+    gradient: "from-slate-500 to-gray-500",
+    icon: "🤖",
   };
 
   return (
     <div className="flex-1 p-4 lg:p-6 space-y-4 lg:overflow-y-auto">
-      {/* HEADER */}
-      <div>
-        <h2 className="text-lg font-semibold capitalize">{tool} assistant</h2>
-        <p className="text-sm text-muted-foreground">
-          Powered by free AI models via OpenRouter
-        </p>
+      {/* HEADER with gradient badge */}
+      <div className="flex items-start gap-3">
+        <div
+          className={`w-10 h-10 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center shrink-0 shadow-lg`}
+        >
+          <span className="text-lg">{meta.icon}</span>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold">{meta.label}</h2>
+          <p className="text-sm text-muted-foreground">
+            Powered by free AI models via OpenRouter
+          </p>
+        </div>
       </div>
 
       {/* EXAMPLES */}
@@ -143,6 +207,7 @@ export default function ToolPanel() {
           <button
             key={ex.label}
             onClick={() => setInput(ex.prompt)}
+            title={ex.prompt}
             className="text-xs px-3 py-1.5 rounded-full border bg-background hover:bg-muted transition"
           >
             {ex.label}
@@ -162,16 +227,24 @@ export default function ToolPanel() {
       )}
 
       {/* INPUT */}
-      <Textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Type your request..."
-        className="min-h-[160px]"
-        disabled={isLoading}
-      />
+      <div className={shake ? "animate-shake" : ""}>
+        <Textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your request... (Enter to send, Shift+Enter for new line)"
+          className="min-h-[160px] focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          disabled={isLoading}
+        />
+      </div>
 
       {/* ACTION */}
-      <Button onClick={runAI} disabled={isLoading || !input.trim()} className="w-full">
+      <Button
+        onClick={runAI}
+        disabled={isLoading || !input.trim()}
+        className="w-full"
+      >
         {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin mr-2" />

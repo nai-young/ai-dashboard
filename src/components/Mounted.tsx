@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 
-interface IMountedProps {
-  children: React.JSX.Element;
+interface MountedProps {
+  children: React.ReactNode;
 }
 
-export function Mounted({ children }: IMountedProps): React.JSX.Element | null {
+export function Mounted({ children }: MountedProps): React.JSX.Element | null {
   const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
@@ -14,5 +14,5 @@ export function Mounted({ children }: IMountedProps): React.JSX.Element | null {
     }
   }, []);
 
-  return mounted ? children : null;
+  return mounted ? <>{children}</> : null;
 }

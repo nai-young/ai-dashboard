@@ -29,6 +29,7 @@ type AIState = {
   clearHistory: () => void;
   isLoading: boolean;
   setLoading: (loading: boolean) => void;
+  startNewChat: () => void;
 };
 
 export const useAIStore = create<AIState>((set) => ({
@@ -69,4 +70,5 @@ export const useAIStore = create<AIState>((set) => ({
     }),
   isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
+  startNewChat: () => set({ activeSessionId: null }),
 }));

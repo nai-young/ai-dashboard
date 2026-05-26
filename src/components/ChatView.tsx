@@ -2,7 +2,7 @@
 
 import { useAIStore } from "@/store/useAIStore";
 
-export default function ChatView() {
+export default function ChatView(): React.JSX.Element {
   const { sessions, activeSessionId } = useAIStore();
 
   const session = sessions.find((s) => s.id === activeSessionId);

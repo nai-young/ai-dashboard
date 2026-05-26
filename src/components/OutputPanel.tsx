@@ -1,21 +1,57 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAIStore } from "@/store/useAIStore";
 import { useEffect, useMemo, useRef } from "react";
+import { Copy, Check } from "lucide-react";
 
-function TypingIndicator() {
+function SkeletonMessage(): React.JSX.Element {
   return (
-    <div className="flex items-center gap-1 p-3 border rounded w-fit">
-      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+    <div className="p-3 border rounded w-full max-w-md space-y-2">
+      <div className="h-4 w-3/4 rounded skeleton-shimmer" />
     </div>
   );
 }
 
-export default function OutputPanel() {
+function CopyButton({ text }: { text: string }): React.JSX.Element {
+  const [copied, setCopied] = useState<boolean>(false);
+
+  const handleCopy = useCallback(async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  }, [text]);
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="mt-2 h-7 px-2 text-xs gap-1 opacity-60 hover:opacity-100"
+      onClick={handleCopy}
+    >
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5" />
+          Copied
+        </>
+      ) : (
+        <>
+          <Copy className="w-3.5 h-3.5" />
+          Copy
+        </>
+      )}
+    </Button>
+  );
+}
+
+export default function OutputPanel(): React.JSX.Element {
   const { sessions, activeSessionId, isLoading } = useAIStore();
 
   const session = sessions.find((s) => s.id === activeSessionId);
@@ -31,7 +67,7 @@ export default function OutputPanel() {
     <div className="flex-1 p-4 lg:p-6 lg:overflow-y-auto">
       <h2 className="text-sm text-muted-foreground mb-3">Conversation</h2>
 
-      <Card className="p-4 min-h-[300px] lg:min-h-[400px] max-h-[calc(100%-16px)] space-y-4 lg:overflow-y-auto">
+      <Card className="p-4 min-h-75 lg:min-h-100 max-h-[calc(100%-16px)] space-y-4 lg:overflow-y-auto">
         {messages.length === 0 && !isLoading && (
           <p className="text-muted-foreground">
             Start a conversation to see AI responses
@@ -52,10 +88,11 @@ export default function OutputPanel() {
             ) : (
               <p>{msg.content}</p>
             )}
+            {msg.role === "assistant" && <CopyButton text={msg.content} />}
           </div>
         ))}
 
-        {isLoading && <TypingIndicator />}
+        {isLoading && <SkeletonMessage />}
 
         <div ref={bottomRef} />
       </Card>
