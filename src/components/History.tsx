@@ -6,7 +6,7 @@ export default function History() {
   const { sessions, setActiveSession } = useAIStore();
 
   return (
-    <div className="p-6 w-full">
+    <div className="p-4 lg:p-6 w-full overflow-y-auto">
       <h1 className="text-xl font-bold mb-4">History</h1>
 
       <div className="space-y-2">

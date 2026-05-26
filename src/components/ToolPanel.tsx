@@ -84,10 +84,9 @@ async function callAI(prompt: string, tool: string): Promise<{ content: string; 
 }
 
 export default function ToolPanel() {
-  const { tool, activeSessionId, createSession, addMessage } = useAIStore();
+  const { tool, activeSessionId, createSession, addMessage, isLoading, setLoading } = useAIStore();
 
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const runAI = async () => {
@@ -129,7 +128,7 @@ export default function ToolPanel() {
   };
 
   return (
-    <div className="w-full p-6 space-y-4">
+    <div className="flex-1 p-4 lg:p-6 space-y-4 lg:overflow-y-auto">
       {/* HEADER */}
       <div>
         <h2 className="text-lg font-semibold capitalize">{tool} assistant</h2>
@@ -168,12 +167,12 @@ export default function ToolPanel() {
         onChange={(e) => setInput(e.target.value)}
         placeholder="Type your request..."
         className="min-h-[160px]"
-        disabled={loading}
+        disabled={isLoading}
       />
 
       {/* ACTION */}
-      <Button onClick={runAI} disabled={loading || !input.trim()} className="w-full">
-        {loading ? (
+      <Button onClick={runAI} disabled={isLoading || !input.trim()} className="w-full">
+        {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
             Generating...

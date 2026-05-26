@@ -25,7 +25,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6 w-full space-y-6">
+    <div className="p-4 lg:p-6 w-full space-y-6 overflow-y-auto">
       <h1 className="text-xl font-bold">Settings</h1>
 
       <Card className="p-4 space-y-3">

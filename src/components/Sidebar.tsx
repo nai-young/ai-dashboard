@@ -7,13 +7,17 @@ import { useAIStore } from "@/store/useAIStore";
 import { tools } from "@/lib/tools";
 import { iconMap } from "@/lib/icons";
 import { ThemeToggle } from "./ThemeToggle";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Menu, X } from "lucide-react";
 
-export default function Sidebar() {
+function SidebarNav({
+  collapsed,
+  onCloseMobile,
+}: {
+  collapsed: boolean;
+  onCloseMobile?: () => void;
+}) {
   const { view, setView } = useUIStore();
   const { setTool, tool: activeTool } = useAIStore();
-
-  const [collapsed, setCollapsed] = useState<boolean>(false);
 
   const grouped = tools.reduce(
     (acc, t) => {
@@ -30,23 +34,33 @@ export default function Sidebar() {
     { id: View.settings, label: "Settings" },
   ];
 
+  const handleNav = (id: View) => {
+    setView(id);
+    onCloseMobile?.();
+  };
+
+  const handleToolClick = (toolId: string) => {
+    setTool(toolId);
+    setView(View.dashboard);
+    onCloseMobile?.();
+  };
+
   return (
-    <div
-      className={`h-screen border-r bg-background p-3 flex flex-col transition-all ${
-        collapsed ? "w-18" : "w-65"
-      }`}
-    >
+    <>
       {/* HEADER */}
       <div className="flex items-center justify-between mb-4">
         {!collapsed && <h1 className="font-bold">FlowAI</h1>}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          {collapsed ? <ArrowRight /> : <ArrowLeft />}
-        </Button>
+        {onCloseMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCloseMobile}
+            className="lg:hidden"
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        )}
       </div>
 
       {/* GLOBAL NAV */}
@@ -66,7 +80,7 @@ export default function Sidebar() {
               <Button
                 variant={active ? "secondary" : "ghost"}
                 className="w-full justify-start gap-2"
-                onClick={() => setView(item.id)}
+                onClick={() => handleNav(item.id)}
               >
                 <Icon className="w-4 h-4" />
                 {!collapsed && item.label}
@@ -85,7 +99,7 @@ export default function Sidebar() {
       <div className="border-t my-2" />
 
       {/* AI TOOLS */}
-      <div className="space-y-4 mt-2">
+      <div className="space-y-4 mt-2 overflow-y-auto">
         {Object.entries(grouped).map(([category, items]) => (
           <div key={category}>
             {!collapsed && (
@@ -109,10 +123,7 @@ export default function Sidebar() {
                     <Button
                       variant={active ? "secondary" : "ghost"}
                       className="w-full justify-start gap-2"
-                      onClick={() => {
-                        setTool(t.id);
-                        setView(View.dashboard);
-                      }}
+                      onClick={() => handleToolClick(t.id)}
                     >
                       <Icon className="w-4 h-4" />
                       {!collapsed && t.label}
@@ -134,6 +145,58 @@ export default function Sidebar() {
       <div className="mt-auto flex justify-center pb-4">
         <ThemeToggle />
       </div>
-    </div>
+    </>
+  );
+}
+
+export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile header with hamburger */}
+      <div className="lg:hidden flex items-center justify-between p-3 border-b bg-background shrink-0">
+        <h1 className="font-bold">FlowAI</h1>
+        <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
+          <Menu className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* Mobile drawer overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div
+            className="absolute right-0 top-0 h-full w-full sm:w-80 border-l bg-background p-4 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SidebarNav collapsed={false} onCloseMobile={() => setMobileOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <div
+        className={`hidden lg:flex h-screen border-r bg-background p-3 flex-col transition-all ${
+          collapsed ? "w-18" : "w-65"
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          {!collapsed && <h1 className="font-bold">FlowAI</h1>}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? <ArrowRight /> : <ArrowLeft />}
+          </Button>
+        </div>
+        <SidebarNav collapsed={collapsed} />
+      </div>
+    </>
   );
 }

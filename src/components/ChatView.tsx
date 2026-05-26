@@ -23,7 +23,7 @@ export default function ChatView() {
         {session.messages.map((msg, i) => (
           <div
             key={i}
-            className={`p-3 rounded max-w-[80%] ${
+            className={`p-3 rounded max-w-[85%] sm:max-w-[80%] ${
               msg.role === "user" ? "ml-auto bg-muted" : "border bg-background"
             }`}
           >

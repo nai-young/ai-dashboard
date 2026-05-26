@@ -13,16 +13,18 @@ export default function Dashboard() {
 
   return (
     <Mounted>
-      <div className="flex h-screen bg-background text-foreground">
+      <div className="flex flex-col lg:flex-row h-screen bg-background text-foreground overflow-hidden">
         <Sidebar />
-        {view === "dashboard" && (
-          <>
-            <ToolPanel />
-            <OutputPanel />
-          </>
-        )}
-        {view === "history" && <History />}
-        {view === "settings" && <Settings />}
+        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+          {view === "dashboard" && (
+            <>
+              <ToolPanel />
+              <OutputPanel />
+            </>
+          )}
+          {view === "history" && <History />}
+          {view === "settings" && <Settings />}
+        </main>
       </div>
     </Mounted>
   );

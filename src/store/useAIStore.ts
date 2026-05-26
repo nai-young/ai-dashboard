@@ -27,6 +27,8 @@ type AIState = {
   createSession: (tool: string, firstMessage: string) => string;
   addMessage: (sessionId: string, msg: Message) => void;
   clearHistory: () => void;
+  isLoading: boolean;
+  setLoading: (loading: boolean) => void;
 };
 
 export const useAIStore = create<AIState>((set) => ({
@@ -65,4 +67,6 @@ export const useAIStore = create<AIState>((set) => ({
       sessions: [],
       activeSessionId: null,
     }),
+  isLoading: false,
+  setLoading: (loading) => set({ isLoading: loading }),
 }));
