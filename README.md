@@ -4,6 +4,9 @@ A modern AI-powered dashboard inspired by ChatGPT, Notion, and Linear. Features 
 
 Built as a frontend portfolio project showcasing production-level UI/UX and scalable architecture.
 
+<img width="1919" height="847" alt="Screenshot_2026-05-27_00-39-38" src="https://github.com/user-attachments/assets/ce7dc017-e389-4248-9b01-4c164f0031d2" />
+
+
 ---
 
 ## 🚀 Features
