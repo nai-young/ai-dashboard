@@ -11,6 +11,7 @@ export function Mounted({ children }: MountedProps): React.JSX.Element | null {
     if (typeof window !== "undefined") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMounted(true);
+      return;
     }
   }, []);
 

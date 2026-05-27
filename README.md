@@ -86,7 +86,7 @@ cp .env.local.example .env.local
 # Run dev server
 npm run dev
 
-# Open http://localhost:3000/dashboard
+# Open http://localhost:3000
 ```
 
 ### Getting a Free OpenRouter API Key
@@ -123,4 +123,4 @@ To protect the free API tier and prevent abuse, the backend enforces:
 
 ## 🌐 Live Demo
 
-https://ai-dashboard-virid-delta.vercel.app/dashboard
+https://ai-dashboard-virid-delta.vercel.app
